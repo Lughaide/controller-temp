@@ -14,6 +14,8 @@ from mxnet.gluon.data.vision import transforms
 from typing import Union, Tuple
 from attrdict import AttrDict
 
+import ast
+
 from time import perf_counter
 
 def create_clients(url: str, use_http: bool) -> Union[httpclient.InferenceServerClient, grpcclient.InferenceServerClient]:
@@ -87,7 +89,11 @@ if __name__ == "__main__":
     inputs = [httpclient.InferInput("input", img.shape, datatype="FP32")]
     inputs[0].set_data_from_numpy(img.astype(np.float32))
 
-    
+    with open('imagenet1000_clsidx_to_labels.txt', 'r+') as f:
+        label_data = f.read()
+
+    label_data = ast.literal_eval(label_data)
+
     responses = []
     responses.append(triton_client.infer("mobilenetv2_12", inputs, request_id="10", outputs=[httpclient.InferRequestedOutput("output", class_count=10)]))
     for response in responses:
@@ -96,6 +102,6 @@ if __name__ == "__main__":
         for result in response.as_numpy("output"):
             for infer_item in result:
                 pred = str(infer_item, encoding='utf-8').split(":")
-                print("Probability: {}\tClass: {}".format(pred[0], pred[1]))
+                print("Probability: {}\tClass: {}".format(pred[0], label_data[int(pred[1])]))
     
 
