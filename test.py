@@ -67,6 +67,7 @@ def preprocess_mbn(img: np.ndarray):
     img = np.divide(img, [0.229, 0.224, 0.225])
     img = img.transpose(2, 0, 1)
     img = np.expand_dims(img, axis=0)
+    img = img.astype(np.float32)
     #t2 = perf_counter()
     #print(f"Cv2 + Numpy method took {t2-t1}s")
     return img
@@ -82,12 +83,15 @@ if __name__ == "__main__":
     #print(json.dumps(model_config, indent=2))
     print('-'*100)
     check_model_info(model_metadata, model_config)
+    img_batch = np.zeros((1, 3, 224, 224), dtype=np.float32)
+    img = cv2.imread('/home/hadang/Downloads/test-images/puggle_084828.jpg', cv2.IMREAD_UNCHANGED)
+    img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
     img = cv2.imread('/home/hadang/Downloads/test-images/springer_3006.jpg', cv2.IMREAD_UNCHANGED)
-    #print(img)
-    img = preprocess_mbn(img)
+    img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
 
-    inputs = [httpclient.InferInput("input", img.shape, datatype="FP32")]
-    inputs[0].set_data_from_numpy(img.astype(np.float32))
+    img_batch = img_batch[1:]
+    inputs = [httpclient.InferInput("input", img_batch.shape, datatype="FP32")]
+    inputs[0].set_data_from_numpy(img_batch)
 
     with open('imagenet1000_clsidx_to_labels.txt', 'r+') as f:
         label_data = f.read()
@@ -95,11 +99,12 @@ if __name__ == "__main__":
     label_data = ast.literal_eval(label_data)
 
     responses = []
-    responses.append(triton_client.infer("mobilenetv2_12", inputs, request_id="10", outputs=[httpclient.InferRequestedOutput("output", class_count=10)]))
+    responses.append(triton_client.infer("mobilenetv2_12", inputs, request_id="10", outputs=[httpclient.InferRequestedOutput("output", class_count=3)]))
     for response in responses:
         total_response = response.get_response()
         print(f"Response {total_response}")
         for result in response.as_numpy("output"):
+            print("////")
             for infer_item in result:
                 pred = str(infer_item, encoding='utf-8').split(":")
                 print("Probability: {}\tClass: {}".format(pred[0], label_data[int(pred[1])]))
