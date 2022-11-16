@@ -87,11 +87,15 @@ if __name__ == "__main__":
     inputs = [httpclient.InferInput("input", img.shape, datatype="FP32")]
     inputs[0].set_data_from_numpy(img.astype(np.float32))
 
+    
     responses = []
-    responses.append(triton_client.infer("mobilenetv2_12", inputs, request_id="1", outputs=[httpclient.InferRequestedOutput("output", class_count=1000)]))
+    responses.append(triton_client.infer("mobilenetv2_12", inputs, request_id="10", outputs=[httpclient.InferRequestedOutput("output", class_count=10)]))
     for response in responses:
-        this_id = response.get_response()["id"]
-        print(f"Response {this_id}")
-        print(response.as_numpy("output"))
+        total_response = response.get_response()
+        print(f"Response {total_response}")
+        for result in response.as_numpy("output"):
+            for infer_item in result:
+                pred = str(infer_item, encoding='utf-8').split(":")
+                print("Probability: {}\tClass: {}".format(pred[0], pred[1]))
     
 
