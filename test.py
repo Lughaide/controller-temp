@@ -8,9 +8,6 @@ import json
 import numpy as np
 import cv2
 
-import mxnet as mx
-from mxnet.gluon.data.vision import transforms
-
 from typing import Union, Tuple
 from attrdict import AttrDict
 
