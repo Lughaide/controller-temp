@@ -63,8 +63,8 @@ def postprocess_mbn(scores):
 
 if __name__ == "__main__":
     print("TESTING")
-    inference_endpoint = "localhost:8001"
-    #inference_endpoint = "192.168.53.100:32001"
+    #inference_endpoint = "localhost:8001"
+    inference_endpoint = "192.168.53.100:32001"
     #model_name = input("Model name: ")
     model_name = "densenet_onnx"
 
@@ -107,8 +107,8 @@ if __name__ == "__main__":
     t2 = perf_counter()
     print(f"Inference using grpc took {t2 - t1:.4f}s")
 
-    #inference_endpoint = "192.168.53.100:32000"
-    inference_endpoint = "localhost:8000"
+    inference_endpoint = "192.168.53.100:32000"
+    #inference_endpoint = "localhost:8000"
     triton_client = create_clients(inference_endpoint, True)
     inputs = [httpclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
     inputs[0].set_data_from_numpy(img_batch[0])
