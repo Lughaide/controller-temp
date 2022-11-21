@@ -77,8 +77,9 @@ def postprocess_mbn(scores):
 
 if __name__ == "__main__":
     print("TESTING")
-    triton_client = create_clients("localhost:35000", True)
-    model_metadata, model_config = get_metadata_config(triton_client, "mobilenetv2_12", "1")
+    triton_client = create_clients(input("HTTP endpoint: "), True)
+    model_name = input("Model name: ")
+    model_metadata, model_config = get_metadata_config(triton_client, model_name , "1")
     #print(json.dumps(model_metadata, indent=2))
     #print(json.dumps(model_config, indent=2))
     print('-'*100)
