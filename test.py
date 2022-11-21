@@ -40,7 +40,7 @@ def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclien
     return model_metadata, model_config
 
 def check_model_info(metadata: AttrDict, config: AttrDict):
-    print(f"Model {metadata.name}:")
+    print(f"Model: {metadata.name}. Available versions: {metadata.versions}")
     print(f"Total input/output count: {len(metadata.inputs)} input(s) | {len(metadata.outputs)} output(s)")
     
     for count, inputs in enumerate(metadata.inputs):
@@ -50,6 +50,7 @@ def check_model_info(metadata: AttrDict, config: AttrDict):
     
     print(f"Max batch size: {config.max_batch_size}")
     print(f"Input format: {config.input[0].format}") # type: ignore
+    # return metadata.name
 
 def request_generator(img_batch: np.ndarray, input_name: str, output_name: str, dtype: str, use_http: bool, max_classes: int):
     if use_http:
@@ -64,11 +65,11 @@ def request_generator(img_batch: np.ndarray, input_name: str, output_name: str, 
     yield inputs, outputs
 
 def infer_request(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], inputs, outputs,
-                metadata: AttrDict, use_http: bool):
+                model_name: str, use_http: bool):
     rng = random.SystemRandom()
     responses = []
     # Add multiple methods of inference here
-    infer_req = client.infer(metadata.name, inputs=inputs, request_id=str(rng.randint(0, 65000)), outputs=outputs) # type: ignore
+    infer_req = client.infer(model_name, inputs=inputs, request_id=str(rng.randint(0, 65000)), outputs=outputs) # type: ignore
     responses.append(infer_req)
     return responses
 
@@ -121,11 +122,6 @@ if __name__ == "__main__":
     check_model_info(model_metadata, model_config)
 
     t1 = perf_counter()
-    # img_batch = np.zeros((1, 3, 224, 224), dtype=np.float32)
-    # img = cv2.imread('/home/hadang/Downloads/test-images/puggle_084828.jpg', cv2.IMREAD_UNCHANGED)
-    # img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
-    # img = cv2.imread('/home/hadang/Pictures/dog-pics/spaniel_4298.jpg', cv2.IMREAD_UNCHANGED)
-    # img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
     img_batch = create_batch("/home/hadang/Pictures/dog-pics")
     t2 = perf_counter()
     print(f"Image batch creation took {t2 - t1:.4f}s")
@@ -133,7 +129,7 @@ if __name__ == "__main__":
 
     for model_in, model_out in request_generator(img_batch[0], model_metadata.inputs[0].name, # type: ignore
                                     model_metadata.outputs[0].name, model_metadata.inputs[0].datatype, True, 3): # type: ignore
-        results = infer_request(triton_client, model_in, model_out, model_metadata, True)
+        results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
         postprocess_mbn(results, model_metadata.outputs[0].name) # type: ignore
 
     # inputs = [grpcclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
