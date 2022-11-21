@@ -8,9 +8,6 @@ import json
 import numpy as np
 import cv2
 
-import mxnet as mx
-from mxnet.gluon.data.vision import transforms
-
 from typing import Union, Tuple
 from attrdict import AttrDict
 
@@ -18,3 +15,12 @@ import ast
 
 from time import perf_counter
 
+# TODO: create a project with the following structure:
+# core
+#   -- client-creation
+#       -- detection
+#       -- classification
+# fastapi-server
+# 
+if __name__ == "__main__":
+    print("WIP")
