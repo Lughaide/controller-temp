@@ -4,9 +4,12 @@ import tritonclient.utils as serverutils
 
 import tritonclient.grpc.model_config_pb2 as mconfpb
 import json
+import glob
 
 import numpy as np
 import cv2
+
+import random
 
 from typing import Union, Tuple
 from attrdict import AttrDict
@@ -48,6 +51,27 @@ def check_model_info(metadata: AttrDict, config: AttrDict):
     print(f"Max batch size: {config.max_batch_size}")
     print(f"Input format: {config.input[0].format}") # type: ignore
 
+def request_generator(img_batch: np.ndarray, input_name: str, output_name: str, dtype: str, use_http: bool, max_classes: int):
+    if use_http:
+        client = httpclient
+    else:
+        client = grpcclient
+    inputs = [client.InferInput(input_name, img_batch.shape, datatype=dtype)] # type: ignore
+    inputs[0].set_data_from_numpy(img_batch)
+    
+    outputs = [client.InferRequestedOutput(output_name, class_count=max_classes)]
+    
+    yield inputs, outputs
+
+def infer_request(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], inputs, outputs,
+                metadata: AttrDict, use_http: bool):
+    rng = random.SystemRandom()
+    responses = []
+    # Add multiple methods of inference here
+    infer_req = client.infer(metadata.name, inputs=inputs, request_id=str(rng.randint(0, 65000)), outputs=outputs) # type: ignore
+    responses.append(infer_req)
+    return responses
+
 def preprocess_mbn(img: np.ndarray):
     img = cv2.resize(img, (224, 224), interpolation= cv2.INTER_LINEAR_EXACT)
     img = np.divide(img, 255.0)
@@ -58,23 +82,38 @@ def preprocess_mbn(img: np.ndarray):
     img = img.astype(np.float32)
     return img
 
-def postprocess_mbn(scores):
+def create_batch(img_dir: str):
+    img_batch = np.zeros((1, 3, 224, 224), dtype=np.float32)
+
+    for img_name in glob.glob(f"{img_dir}/*"):
+        img = cv2.imread(img_name, cv2.IMREAD_UNCHANGED)
+        img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
+    return img_batch[1:]
+
+def postprocess_mbn(responses, output_name: str):
+    total_response = []
+    for response in responses:
+        total_response = response.get_response()
+        print(f"Response {total_response}")
+        for result in response.as_numpy(output_name):
+            pred = str(result, encoding='utf-8').split(":")
+            print(pred)
     return
 
 if __name__ == "__main__":
     print("TESTING")
     #inference_endpoint = "localhost:8001"
-    inference_endpoint = "192.168.53.100:32001"
+    inference_endpoint = "192.168.53.100:32000"
     #model_name = input("Model name: ")
     model_name = "densenet_onnx"
 
     t1 = perf_counter()
-    triton_client = create_clients(inference_endpoint, False)
+    triton_client = create_clients(inference_endpoint, True)
     t2 = perf_counter()
     print(f"Client creation took {t2 - t1:.4f}s")
     
     t1 = perf_counter()
-    model_metadata, model_config = get_metadata_config(triton_client, model_name , "1", False)
+    model_metadata, model_config = get_metadata_config(triton_client, model_name , "1", True)
     t2 = perf_counter()
     print(f"Getting metadata config took {t2 - t1:.4f}s")
 
@@ -82,53 +121,57 @@ if __name__ == "__main__":
     check_model_info(model_metadata, model_config)
 
     t1 = perf_counter()
-    img_batch = np.zeros((1, 3, 224, 224), dtype=np.float32)
+    # img_batch = np.zeros((1, 3, 224, 224), dtype=np.float32)
     # img = cv2.imread('/home/hadang/Downloads/test-images/puggle_084828.jpg', cv2.IMREAD_UNCHANGED)
     # img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
-    img = cv2.imread('/home/hadang/Downloads/test-images/springer_3006.jpg', cv2.IMREAD_UNCHANGED)
-    img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
+    # img = cv2.imread('/home/hadang/Pictures/dog-pics/spaniel_4298.jpg', cv2.IMREAD_UNCHANGED)
+    # img_batch = np.append(img_batch, preprocess_mbn(img), axis=0)
+    img_batch = create_batch("/home/hadang/Pictures/dog-pics")
     t2 = perf_counter()
     print(f"Image batch creation took {t2 - t1:.4f}s")
+    print(f"Img batch: {img_batch.shape}")
 
-    img_batch = img_batch[1:]
-    print(f"Img shape: {img_batch[0].shape}")
+    for model_in, model_out in request_generator(img_batch[0], model_metadata.inputs[0].name, # type: ignore
+                                    model_metadata.outputs[0].name, model_metadata.inputs[0].datatype, True, 3): # type: ignore
+        results = infer_request(triton_client, model_in, model_out, model_metadata, True)
+        postprocess_mbn(results, model_metadata.outputs[0].name) # type: ignore
 
-    inputs = [grpcclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
-    inputs[0].set_data_from_numpy(img_batch[0])
+    # inputs = [grpcclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
+    # inputs[0].set_data_from_numpy(img_batch[0])
 
     # with open('imagenet1000_clsidx_to_labels.txt', 'r+') as f:
     #     label_data = f.read()
 
     # label_data = ast.literal_eval(label_data)
 
-    responses = []
-    t1 = perf_counter()
-    responses.append(triton_client.infer(model_name, inputs, request_id="10", outputs=[grpcclient.InferRequestedOutput("fc6_1", class_count=3)]))
-    t2 = perf_counter()
-    print(f"Inference using grpc took {t2 - t1:.4f}s")
+    # responses = []
+    # t1 = perf_counter()
+    # responses.append(triton_client.infer(model_name, inputs, request_id="10", outputs=[grpcclient.InferRequestedOutput("fc6_1", class_count=3)]))
+    # t2 = perf_counter()
+    # print(f"Inference using grpc took {t2 - t1:.4f}s")
 
-    inference_endpoint = "192.168.53.100:32000"
-    #inference_endpoint = "localhost:8000"
-    triton_client = create_clients(inference_endpoint, True)
-    inputs = [httpclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
-    inputs[0].set_data_from_numpy(img_batch[0])
+    # inference_endpoint = "192.168.53.100:32000"
+    # #inference_endpoint = "localhost:8000"
+    # triton_client = create_clients(inference_endpoint, True)
+    # inputs = [httpclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
+    # inputs[0].set_data_from_numpy(img_batch[0])
 
-    responses = []
-    t1 = perf_counter()
-    responses.append(triton_client.infer(model_name, inputs, request_id="10", outputs=[httpclient.InferRequestedOutput("fc6_1", class_count=3)]))
-    t2 = perf_counter()
-    print(f"Inference using http took {t2 - t1:.4f}s")
+    # responses = []
+    # t1 = perf_counter()
+    # responses.append(triton_client.infer(model_name, inputs, request_id="10", outputs=[httpclient.InferRequestedOutput("fc6_1", class_count=3)]))
+    # t2 = perf_counter()
+    # print(f"Inference using http took {t2 - t1:.4f}s")
 
-    for response in responses:
-        total_response = response.get_response()
-        print(f"Response {total_response}")
-        for result in response.as_numpy("fc6_1"):
-            #print(result)
-            pred = str(result, encoding='utf-8').split(":")
-            print(pred)
-            # for infer_item in result:
-            #     print(infer_item)
-            #     pred = str(infer_item, encoding='utf-8').split(":")
-            #     print("Probability: {}\tClass: {}".format(pred[0], label_data[int(pred[1])]))
-            #     print("Probability: {}\tClass: {}".format(pred[0], (pred[1])))
+    # for response in responses:
+    #     total_response = response.get_response()
+    #     print(f"Response {total_response}")
+    #     for result in response.as_numpy("fc6_1"):
+    #         #print(result)
+    #         pred = str(result, encoding='utf-8').split(":")
+    #         print(pred)
+    #         # for infer_item in result:
+    #         #     print(infer_item)
+    #         #     pred = str(infer_item, encoding='utf-8').split(":")
+    #         #     print("Probability: {}\tClass: {}".format(pred[0], label_data[int(pred[1])]))
+    #         #     print("Probability: {}\tClass: {}".format(pred[0], (pred[1])))
 
