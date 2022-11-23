@@ -56,7 +56,7 @@ def check_model_info(metadata: AttrDict, config: AttrDict):
     print(f"Max batch size: {config.max_batch_size}")
     print(f"Input format: {config.input[0].format}") # type: ignore
     
-def request_generator(img_batch: np.ndarray, input_name: str, output_name: str, dtype: str, use_http: bool, max_classes: int):
+def request_generator(img_batch: np.ndarray, input_name: str, output_list: str, dtype: str, use_http: bool):
     if use_http:
         client = httpclient
     else:
@@ -65,8 +65,8 @@ def request_generator(img_batch: np.ndarray, input_name: str, output_name: str, 
     inputs[0].set_data_from_numpy(img_batch)
     
     outputs = []
-    #for output_name in outputs:
-    outputs.append(client.InferRequestedOutput(output_name, class_count=max_classes))
+    for output_name in output_list:
+        outputs.append(client.InferRequestedOutput(output_name))
     
     yield inputs, outputs
 
@@ -97,15 +97,16 @@ def create_batch(img_dir: str):
         img_batch = np.append(img_batch, preprocess_ssd(img), axis=0)
     return img_batch[1:]
 
-def postprocess_ssd(responses, output_name):
+def postprocess_ssd(responses, output_list):
     total_response = []
     for response in responses:
         total_response = response.get_response()
         print(f"Response {total_response}")
-        #for output_name in output_list:
-        for result in response.as_numpy(output_name):
-            pred = str(result, encoding='utf-8').split(":")
-            print(pred)
+        for output_name in output_list:
+            for result in response.as_numpy(output_name)[:5]:
+                print(result)
+            # pred = str(result, encoding='utf-8').split(":")
+            # print(pred)
     return
 
 if __name__ == "__main__":
@@ -127,7 +128,7 @@ if __name__ == "__main__":
 
     for img in img_batch:
         for model_in, model_out in request_generator(img, model_metadata.inputs[0].name, # type: ignore
-                                        model_metadata.outputs[0].name, model_metadata.inputs[0].datatype, True, 3): # type: ignore
+                                        model_outputs, model_metadata.inputs[0].datatype, True): # type: ignore
             results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-            postprocess_ssd(results, model_metadata.outputs[0].name) # type: ignore
+            postprocess_ssd(results, model_outputs) # type: ignore
 
