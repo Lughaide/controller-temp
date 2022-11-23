@@ -1,19 +1,5 @@
-from typing import Union, Tuple
-from attrdict import AttrDict
-
-import tritonclient.http as httpclient
-import tritonclient.grpc as grpcclient
-import tritonclient.grpc.model_config_pb2 as mconfpb
-import tritonclient.utils as serverutils
-
-import json
-import glob
-import random
-
-import numpy as np
-import cv2
-
-from utils import echo_model_info
+from clientutils import *
+from utils import *
 
 def create_client(url: str, port: str, use_http: bool, use_ssl: bool):
     url = f"{url}:{port}"
@@ -71,6 +57,21 @@ def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclien
 
     return model_metadata, model_config
 
+def get_model_details(metadata: AttrDict, config: AttrDict):
+    model_name = metadata.name
+    model_versions = metadata.versions
+    model_max_batch_size = config.max_batch_size
+    
+    model_inputs = []
+    model_outputs = []
+    for count, m_input in enumerate(metadata.inputs):
+        input_details = [m_input.name, m_input.shape, m_input.datatype, config.input[count].format] # type: ignore
+        model_inputs.append(input_details)
+    for count, m_input in enumerate(metadata.outputs):
+        input_details = [m_input.name, m_input.shape, m_input.datatype] # type: ignore
+        model_outputs.append(input_details)
+    return [model_name, model_versions, model_max_batch_size, model_inputs, model_outputs]
+
 if __name__ == "__main__":
     print(f"This file contains definitions for the triton client.", "-"*100, sep='\n')
     url = "192.168.53.100"
@@ -80,4 +81,6 @@ if __name__ == "__main__":
 
     client = create_client(url, port, True, False)
     model_metadata, model_config = get_metadata_config(client, model_name, model_version, True)
-    echo_model_info(model_metadata, model_config)
+    echo_model_info(model_metadata, model_config) # for checking model
+    *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
+    print(batch_size, model_inputs, model_outputs, sep='\n')
