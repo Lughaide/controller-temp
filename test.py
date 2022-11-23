@@ -18,14 +18,12 @@ import ast
 
 from time import perf_counter
 
-def create_clients(url: str, use_http: bool) -> Union[httpclient.InferenceServerClient, grpcclient.InferenceServerClient]:
-    triton_http = httpclient.InferenceServerClient(url, verbose=False)
-    triton_grpc = grpcclient.InferenceServerClient(url, verbose=False)
-
+def create_clients(url: str, portnum: str, use_http: bool) -> Union[httpclient.InferenceServerClient, grpcclient.InferenceServerClient]:
+    url = url + ":" + portnum
     if use_http:
-        return triton_http
+        return httpclient.InferenceServerClient(url, verbose=False)
     else:
-        return triton_grpc
+        return grpcclient.InferenceServerClient(url, verbose=False)
 
 def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], mname: str, mver: str, use_http: bool) -> Tuple[AttrDict, AttrDict]:
     model_metadata = client.get_model_metadata(mname, mver)
@@ -104,12 +102,12 @@ def postprocess_mbn(responses, output_name: str):
 if __name__ == "__main__":
     print("TESTING")
     #inference_endpoint = "localhost:8001"
-    inference_endpoint = "192.168.53.100:32000"
+    inference_endpoint = "192.168.53.100"
     #model_name = input("Model name: ")
     model_name = "densenet_onnx"
 
     t1 = perf_counter()
-    triton_client = create_clients(inference_endpoint, True)
+    triton_client = create_clients(inference_endpoint, "32000", True)
     t2 = perf_counter()
     print(f"Client creation took {t2 - t1:.4f}s")
     
@@ -132,43 +130,3 @@ if __name__ == "__main__":
                                         model_metadata.outputs[0].name, model_metadata.inputs[0].datatype, True, 3): # type: ignore
             results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
             postprocess_mbn(results, model_metadata.outputs[0].name) # type: ignore
-
-    # inputs = [grpcclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
-    # inputs[0].set_data_from_numpy(img_batch[0])
-
-    # with open('imagenet1000_clsidx_to_labels.txt', 'r+') as f:
-    #     label_data = f.read()
-
-    # label_data = ast.literal_eval(label_data)
-
-    # responses = []
-    # t1 = perf_counter()
-    # responses.append(triton_client.infer(model_name, inputs, request_id="10", outputs=[grpcclient.InferRequestedOutput("fc6_1", class_count=3)]))
-    # t2 = perf_counter()
-    # print(f"Inference using grpc took {t2 - t1:.4f}s")
-
-    # inference_endpoint = "192.168.53.100:32000"
-    # #inference_endpoint = "localhost:8000"
-    # triton_client = create_clients(inference_endpoint, True)
-    # inputs = [httpclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
-    # inputs[0].set_data_from_numpy(img_batch[0])
-
-    # responses = []
-    # t1 = perf_counter()
-    # responses.append(triton_client.infer(model_name, inputs, request_id="10", outputs=[httpclient.InferRequestedOutput("fc6_1", class_count=3)]))
-    # t2 = perf_counter()
-    # print(f"Inference using http took {t2 - t1:.4f}s")
-
-    # for response in responses:
-    #     total_response = response.get_response()
-    #     print(f"Response {total_response}")
-    #     for result in response.as_numpy("fc6_1"):
-    #         #print(result)
-    #         pred = str(result, encoding='utf-8').split(":")
-    #         print(pred)
-    #         # for infer_item in result:
-    #         #     print(infer_item)
-    #         #     pred = str(infer_item, encoding='utf-8').split(":")
-    #         #     print("Probability: {}\tClass: {}".format(pred[0], label_data[int(pred[1])]))
-    #         #     print("Probability: {}\tClass: {}".format(pred[0], (pred[1])))
-
