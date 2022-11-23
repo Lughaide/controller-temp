@@ -132,4 +132,4 @@ if __name__ == "__main__":
     for img in img_batch:
         for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
             results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-            postprocess_ssd(img, results, model_out) # type: ignore
+            postprocess_ssd(img, results, model_outputs) # type: ignore
