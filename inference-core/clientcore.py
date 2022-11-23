@@ -107,14 +107,13 @@ def postprocess_ssd(img, responses, output_list):
     for response in responses:
         total_response = response.get_response()
         print(f"Response {total_response}")
-        for output_name in output_list:
-            for result in response.as_numpy(output_name)[:1]:
+        for output_val in output_list:
+            for result in response.as_numpy(output_val[0])[:1]:
                 print(result)
                 # if output_name == 'bboxes':
                 #     draw_img_w_label(img, result*1200)
             # pred = str(result, encoding='utf-8').split(":")
             # print(pred)
-    return
 
 if __name__ == "__main__":
     print(f"This file contains definitions for the triton client.", "-"*100, sep='\n')
@@ -133,4 +132,4 @@ if __name__ == "__main__":
     for img in img_batch:
         for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
             results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-            postprocess_ssd(img, results, model_outputs) # type: ignore
+            postprocess_ssd(img, results, model_out) # type: ignore
