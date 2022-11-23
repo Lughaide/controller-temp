@@ -1,8 +1,3 @@
-import tritonclient.http as httpclient
-import tritonclient.grpc as grpcclient
-import tritonclient.grpc.model_config_pb2 as mconfpb
-import tritonclient.utils as serverutils
-
 from utils import AttrDict
 
 def echo_model_info(metadata: AttrDict, config: AttrDict):
