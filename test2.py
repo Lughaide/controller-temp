@@ -97,16 +97,35 @@ def create_batch(img_dir: str):
         img_batch = np.append(img_batch, preprocess_ssd(img), axis=0)
     return img_batch[1:]
 
-def postprocess_ssd(responses, output_list):
+def postprocess_ssd(img, responses, output_list):
     total_response = []
     for response in responses:
         total_response = response.get_response()
         print(f"Response {total_response}")
         for output_name in output_list:
-            for result in response.as_numpy(output_name)[:5]:
+            for result in response.as_numpy(output_name)[:1]:
                 print(result)
+                if output_name == 'bboxes':
+                    draw_img_w_label(img, result*1200)
             # pred = str(result, encoding='utf-8').split(":")
             # print(pred)
+    return
+
+def draw_img_w_label(img: np.ndarray, bbox: np.ndarray):
+    color = (0, 0, 255)
+    img_b = img.transpose(1, 2, 0)
+    img_b = np.multiply(img_b, [0.229, 0.224, 0.225])
+    img_b = np.add(img_b, [0.485, 0.456, 0.406])
+    img_b = img_b * 255.0
+    img_b = img_b.astype(np.uint8)
+    bbox = bbox.astype(int)
+    print(img_b.shape)
+    start_point = (bbox[0], bbox[1])
+    end_point = (bbox[2], bbox[3])
+    img_c = cv2.rectangle(img_b.copy(), start_point, end_point, color, 4)
+    cv2.imshow("Image with box", img_c)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return
 
 if __name__ == "__main__":
@@ -130,5 +149,5 @@ if __name__ == "__main__":
         for model_in, model_out in request_generator(img, model_metadata.inputs[0].name, # type: ignore
                                         model_outputs, model_metadata.inputs[0].datatype, True): # type: ignore
             results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-            postprocess_ssd(results, model_outputs) # type: ignore
+            postprocess_ssd(img, results, model_outputs) # type: ignore
 
