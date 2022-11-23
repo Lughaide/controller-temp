@@ -122,15 +122,16 @@ if __name__ == "__main__":
     check_model_info(model_metadata, model_config)
 
     t1 = perf_counter()
-    img_batch = create_batch("/home/hadang/Pictures/dog-pics")
+    img_batch = create_batch("./dog-pics")
     t2 = perf_counter()
     print(f"Image batch creation took {t2 - t1:.4f}s")
     print(f"Img batch: {img_batch.shape}")
 
-    for model_in, model_out in request_generator(img_batch[0], model_metadata.inputs[0].name, # type: ignore
-                                    model_metadata.outputs[0].name, model_metadata.inputs[0].datatype, True, 3): # type: ignore
-        results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-        postprocess_mbn(results, model_metadata.outputs[0].name) # type: ignore
+    for img in img_batch:
+        for model_in, model_out in request_generator(img, model_metadata.inputs[0].name, # type: ignore
+                                        model_metadata.outputs[0].name, model_metadata.inputs[0].datatype, True, 3): # type: ignore
+            results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
+            postprocess_mbn(results, model_metadata.outputs[0].name) # type: ignore
 
     # inputs = [grpcclient.InferInput("data_0", img_batch[0].shape, datatype="FP32")]
     # inputs[0].set_data_from_numpy(img_batch[0])
