@@ -63,6 +63,7 @@ def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclien
     return model_metadata, model_config
 
 def get_model_details(metadata: AttrDict, config: AttrDict):
+    # extract model details from metadata and configuration
     model_name = metadata.name
     model_versions = metadata.versions
     model_max_batch_size = config.max_batch_size
@@ -82,22 +83,26 @@ def request_generator(img_batch: np.ndarray, input_list: list, output_list: list
         client = httpclient
     else:
         client = grpcclient
+    
     inputs = []
     for count, input_val in enumerate(input_list):
+        # each value in input_list contains: [input layer name, input shape, input datatype, input format]
         inputs.append(client.InferInput(input_val[0], img_batch.shape, datatype=input_val[2])) # type: ignore
         inputs[count].set_data_from_numpy(img_batch)
 
     outputs = []
     for output_val in output_list:
+        # each value in output_list contains: [output layer name, output shape, output datatype]
         outputs.append(client.InferRequestedOutput(output_val[0]))
 
     yield inputs, outputs
 
 def infer_request(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], inputs, outputs,
                 model_name: str, use_http: bool):
+    # inputs and outputs are list of input layers and output layers
     rng = random.SystemRandom()
     responses = []
-    # Add multiple methods of inference here
+    # TODO: Add additional inference methods
     infer_req = client.infer(model_name, inputs=inputs, request_id=str(rng.randint(0, 65000)), outputs=outputs) # type: ignore
     responses.append(infer_req)
     return responses

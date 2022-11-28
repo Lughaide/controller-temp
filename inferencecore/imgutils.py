@@ -13,24 +13,23 @@ def preprocess_ssd(img: np.ndarray):
 def create_batch(img_dir: str):
     img_batch = np.zeros((1, 3, 1200, 1200), dtype=np.float32)
 
-    for img_name in glob.glob(f"{img_dir}/*"):
+    for img_name in glob.glob(f"{img_dir}/*.jpg"):
         img = cv2.imread(img_name, cv2.IMREAD_UNCHANGED)
         img_batch = np.append(img_batch, preprocess_ssd(img), axis=0)
     return img_batch[1:]
 
-def postprocess_ssd(img, responses, output_list):
-    total_response = []
+def postprocess_ssd(img, responses, model_outputs):
+    cropped_result = {}
+    
+    for output_name in model_outputs:
+        cropped_result[output_name] = []
+    
     for response in responses:
         total_response = response.get_response()
-        print(f"Response {total_response}")
-        for output_name in output_list:
-            for result in response.as_numpy(output_name)[:1]:
-                print(result)
-                if output_name == 'bboxes':
-                    draw_img_w_label(img, result*1200)
-            # pred = str(result, encoding='utf-8').split(":")
-            # print(pred)
-    return
+        for output_name in model_outputs:
+            for result in response.as_numpy(output_name):
+                cropped_result[output_name].append(result)
+    return cropped_result
 
 def draw_img_w_label(img: np.ndarray, bbox: np.ndarray):
     color = (0, 0, 255)
