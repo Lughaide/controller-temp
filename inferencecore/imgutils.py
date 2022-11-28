@@ -1,4 +1,4 @@
-from utils import *
+from .utils import *
 
 def preprocess_ssd(img: np.ndarray):
     img = cv2.resize(img, (1200, 1200), interpolation= cv2.INTER_LINEAR_EXACT)

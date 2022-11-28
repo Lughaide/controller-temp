@@ -3,8 +3,8 @@ import tritonclient.grpc as grpcclient
 import tritonclient.grpc.model_config_pb2 as mconfpb
 import tritonclient.utils as serverutils
 
-from utils import *
-from clientutils import echo_model_info
+from .utils import *
+from .clientutils import echo_model_info
 
 def create_client(url: str, port: str, use_http: bool, use_ssl: bool):
     url = f"{url}:{port}"

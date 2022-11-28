@@ -1,4 +1,4 @@
-from utils import AttrDict
+from .utils import AttrDict
 
 def echo_model_info(metadata: AttrDict, config: AttrDict):
     print(f"Model: {metadata.name}. Available versions: {metadata.versions}")
