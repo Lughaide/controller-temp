@@ -9,3 +9,5 @@ import numpy as np
 import cv2
 
 from attrdict import AttrDict
+
+from time import perf_counter

@@ -11,3 +11,4 @@ def echo_model_info(metadata: AttrDict, config: AttrDict):
     
     print(f"Max batch size: {config.max_batch_size}")
     print(f"Input format: {config.input[0].format}") # type: ignore
+    print("-"*100)

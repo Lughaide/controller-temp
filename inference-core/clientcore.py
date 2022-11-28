@@ -102,34 +102,30 @@ def infer_request(client: Union[httpclient.InferenceServerClient,grpcclient.Infe
     responses.append(infer_req)
     return responses
 
-def postprocess_ssd(img, responses, output_list):
-    total_response = []
-    for response in responses:
-        total_response = response.get_response()
-        print(f"Response {total_response}")
-        for output_val in output_list:
-            for result in response.as_numpy(output_val[0])[:1]:
-                print(result)
-                # if output_name == 'bboxes':
-                #     draw_img_w_label(img, result*1200)
-            # pred = str(result, encoding='utf-8').split(":")
-            # print(pred)
-
 if __name__ == "__main__":
-    print(f"This file contains definitions for the triton client.", "-"*100, sep='\n')
+    # This file contains client definitions for interaction between Triton IS and FastAPI server (or any type of server that uses Python).
     url = "192.168.53.100"
     port = "32000"
     model_name = "ssd_12"
     model_version = "1"
 
+    print(f"Performing test run.")
+    print(f"Server address: {url}:{port}; Model: {model_name} version {model_version}")    
+    print("-"*100)
+
     triton_client = create_client(url, port, True, False)
     model_metadata, model_config = get_metadata_config(triton_client, model_name, model_version, True)
     echo_model_info(model_metadata, model_config) # for checking model
     *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
-    print(batch_size, model_inputs, model_outputs, sep='\n')
+    # print(batch_size, model_inputs, model_outputs, sep='\n')
 
     img_batch = np.zeros((2, 3, 1200, 1200), dtype=np.float32)
-    for img in img_batch:
+    for count, img in enumerate(img_batch):
+        print("> Request 1:")
+        t1 = perf_counter()
         for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
             results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-            postprocess_ssd(img, results, model_outputs) # type: ignore
+            for result in results:
+                print(result.get_response())
+        t2 = perf_counter()
+        print(f"Total time taken: {(t2 - t1):.03f}s")
