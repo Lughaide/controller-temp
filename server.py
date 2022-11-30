@@ -3,6 +3,7 @@ from inferencecore.imgutils import *
 
 from enum import Enum
 from fastapi import FastAPI, UploadFile
+from fastapi.responses import Response
 
 app = FastAPI()
 use_http = False
@@ -77,7 +78,12 @@ def infer_test(model_name: ModelName):
                 else:
                     return result.get_response(as_json=True)
 
-@app.post("/infer/detect_all")
+@app.post("/infer/detect_all",
+    responses = {
+        200: {
+            "content": {"image/jpg": {}}
+        }},
+    response_class=Response,)
 def infer_detect_classify(file: UploadFile):
     raw_data = np.frombuffer(file.file.read(), np.uint8)
     img_np = cv2.imdecode(raw_data, cv2.IMREAD_COLOR)
@@ -96,13 +102,47 @@ def infer_detect_classify(file: UploadFile):
         for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http): # type: ignore
             results = infer_request(client, model_in, model_out, ModelName.detection, use_http) # type: ignore
             detected_img = postprocess_ssd(img, results, name_outputs)
+
+    cropped_img = []
     for count, res_item in enumerate(detected_img['labels']):
         if (res_item == 17): # Class 17 is dog
             print(detected_img['bboxes'][count], detected_img['labels'][count], detected_img['scores'][count])
-    return {"filename": file.filename,
-            "type": file.content_type,
-            "size": len(raw_data),
-            "miscs": img_np.shape}
+            xmin, ymin, xmax, ymax = (detected_img['bboxes'][count]*1200).astype(np.uint32)
+            print(xmin, ymin, xmax, ymax)
+            rt_img = reverse_ssd(img_batch[0])
+            print(rt_img.shape)
+            cropped_img.append(rt_img[ymin:ymax, xmin:xmax])
+            
+            #cv_status, encoded_img = cv2.imencode('.jpg', cropped_img.copy())
+            #print(cv_status)
+            #return Response(encoded_img.tostring(), media_type="image/jpg")
+            break
+    cropped_img[0] = cv2.resize(cropped_img[0], (224, 224), interpolation= cv2.INTER_LINEAR_EXACT)
+    cv2.imwrite("temp.jpg", cropped_img[0])
+    cropped_img[0] = cropped_img[0].transpose(2, 0, 1)
+    cropped_img[0] = cropped_img[0] / 127.5 - 1 #type: ignore
+    cropped_img[0] = cropped_img[0].astype(np.float32)
+    
+    print("Classifying the dog")
+    # Classify the dog
+    model_metadata, model_config = get_metadata_config(client, ModelName.classification, "1", use_http)
+    *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
+
+    name_outputs = []
+    for n in model_metadata.outputs:
+        name_outputs.append(n.name) # type: ignore
+
+    classified_img = {}
+    for img in cropped_img:
+        for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http, class_count=3): # type: ignore
+            results = infer_request(client, model_in, model_out, ModelName.classification, use_http) # type: ignore
+            postprocess_dense(results[0], name_outputs[0])
+    
+    #return classified_img
+    # return {"filename": file.filename,
+    #         "type": file.content_type,
+    #         "size": len(raw_data),
+    #         "miscs": img_np.shape}
 
 @app.post("/infer/{model_name}")
 def infer_model(model_name: ModelName, mversion: int = 1):

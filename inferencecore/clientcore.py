@@ -83,7 +83,7 @@ def get_model_details(metadata: AttrDict, config: AttrDict):
         model_outputs.append(input_details)
     return [model_name, model_versions, model_max_batch_size, model_inputs, model_outputs]
 
-def request_generator(img_batch: np.ndarray, input_list: list, output_list: list, use_http: bool):
+def request_generator(img_batch: np.ndarray, input_list: list, output_list: list, use_http: bool, class_count: int = 0):
     if use_http:
         client = httpclient
     else:
@@ -98,7 +98,7 @@ def request_generator(img_batch: np.ndarray, input_list: list, output_list: list
     outputs = []
     for output_val in output_list:
         # each value in output_list contains: [output layer name, output shape, output datatype]
-        outputs.append(client.InferRequestedOutput(output_val[0]))
+        outputs.append(client.InferRequestedOutput(output_val[0], class_count=class_count))
 
     yield inputs, outputs
 

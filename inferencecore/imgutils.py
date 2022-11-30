@@ -10,6 +10,13 @@ def preprocess_ssd(img: np.ndarray):
     img = img.astype(np.float32)
     return img
 
+def reverse_ssd(img: np.ndarray):
+    img = img.transpose(1, 2, 0)
+    img = img * [0.229, 0.224, 0.225]
+    img = img + [0.485, 0.456, 0.406]
+    img = img * 255.0
+    return img
+
 def create_batch(img_dir: str):
     img_batch = np.zeros((1, 3, 1200, 1200), dtype=np.float32)
 
@@ -29,6 +36,27 @@ def postprocess_ssd(img, responses, model_outputs):
             for result in response.as_numpy(output_name):
                 cropped_result[output_name].append(result)
     return cropped_result
+
+def postprocess_dense(responses, output_name: str):
+    print(responses.get_response())
+    # for response in responses:
+    #     total_response = response.get_response()
+    #     print(f"Response {total_response}")
+    #     for result in response.as_numpy(output_name):
+    #         pred = str(result, encoding='utf-8').split(":")
+    #         print(pred)
+    output_array = responses.as_numpy(output_name)
+    print(output_array)
+    for results in output_array:
+        results = [results]
+        for result in results:
+            if output_array.dtype.type == np.object_:
+                cls = "".join(chr(x) for x in result).split(':')
+            else:
+                print(result)
+                #cls = result.split(':')
+                #print("    {} ({}) = {}".format(cls[0], cls[1], cls[2]))
+    return
 
 def draw_img_w_label(img: np.ndarray, bbox: np.ndarray):
     color = (0, 0, 255)
