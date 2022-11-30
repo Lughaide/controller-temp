@@ -51,15 +51,19 @@ def create_client(url: str, port: str, use_http: bool, use_ssl: bool):
             return grpcclient.InferenceServerClient(url=url, verbose=verbose)
     
 
-def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], mname: str, mver: str, use_http: bool) -> Tuple[AttrDict, AttrDict]:
+def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], mname: str, mver: str, use_http: bool, as_json: bool = False) -> Tuple[AttrDict, AttrDict]:
     # HTTP and GRPC return different response objects => must make grpc return as JSON to turn into AttrDict
     if use_http:
         model_metadata = AttrDict(client.get_model_metadata(mname, mver))
         model_config = AttrDict(client.get_model_config(mname, mver))
     else:
-        model_metadata = client.get_model_metadata(mname, mver, as_json=False) #type: ignore
-        model_config = client.get_model_config(mname, mver, as_json=False) #type: ignore
-        model_config = model_config.config
+        if as_json:
+            model_metadata = AttrDict(client.get_model_metadata(mname, mver, as_json=as_json)) #type: ignore
+            model_config = AttrDict(client.get_model_config(mname, mver, as_json=as_json)) #type: ignore
+        else:
+            model_metadata = client.get_model_metadata(mname, mver, as_json=as_json) #type: ignore
+            model_config = client.get_model_config(mname, mver, as_json=as_json) #type: ignore
+            model_config = model_config.config
 
     return model_metadata, model_config
 
