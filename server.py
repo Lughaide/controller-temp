@@ -5,7 +5,9 @@ from enum import Enum
 from fastapi import FastAPI, UploadFile
 
 app = FastAPI()
-client = create_client("192.168.53.100", "32000", True, False)
+use_http = False
+client = create_client("192.168.53.100", "32000" if use_http else "32001", use_http, False)
+
 
 class ModelName(str, Enum):
     detection = "ssd_12"
@@ -20,8 +22,9 @@ class ModelConfig(str, Enum):
 @app.get("/models/{model_name}/")
 def read_item(model_name: ModelName, mversion: int = 1):
     try:
-        return get_metadata_config(client, model_name, str(mversion), True)
-    except Exception as e:
+        metadata, config = get_metadata_config(client, model_name, str(mversion), use_http)
+        return metadata, config
+    except InferenceServerException as e:
         return {"Error": e}
     
 
@@ -39,19 +42,27 @@ def config_model(mconfig: ModelConfig, model_name: ModelName, model_version: int
 def infer_test(model_name: ModelName):
     # Dummy data batch
     
-    model_metadata, model_config = get_metadata_config(client, model_name, "1", True)
+    model_metadata, model_config = get_metadata_config(client, model_name, "1", use_http)
+    print(model_metadata)
+    print("-"*100)
+    print(model_config)
     *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
+    print(batch_size)
 
     dummy_shape = list(model_inputs[0][1])
     dummy_shape.insert(0, 1)
     img_batch = np.zeros(tuple(dummy_shape), dtype=np.float32)
+    print(img_batch.shape)
     # Should return a typical response for a detection inference
     for img in img_batch:
-        for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
-            results = infer_request(client, model_in, model_out, model_metadata.name, True) # type: ignore
+        for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http): # type: ignore
+            results = infer_request(client, model_in, model_out, model_metadata.name, use_http) # type: ignore
             #temp.append(postprocess_ssd(img, results, model_outputs)) # type: ignore
             for result in results:
-                return result.get_response()
+                if use_http:
+                    return result.get_response()
+                else:
+                    return result.get_response(as_json=True)
 
 @app.post("/infer/detect_all")
 def infer_detect_classify(file: UploadFile):
@@ -60,7 +71,7 @@ def infer_detect_classify(file: UploadFile):
     img_batch = preprocess_ssd(img_np)
 
     # Detect the dog
-    model_metadata, model_config = get_metadata_config(client, ModelName.detection, "1", True)
+    model_metadata, model_config = get_metadata_config(client, ModelName.detection, "1", use_http)
     *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
 
     name_outputs = []
@@ -69,8 +80,8 @@ def infer_detect_classify(file: UploadFile):
 
     detected_img = {}
     for img in img_batch:
-        for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
-            results = infer_request(client, model_in, model_out, ModelName.detection, True) # type: ignore
+        for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http): # type: ignore
+            results = infer_request(client, model_in, model_out, ModelName.detection, use_http) # type: ignore
             detected_img = postprocess_ssd(img, results, name_outputs)
     for count, res_item in enumerate(detected_img['labels']):
         if (res_item == 17): # Class 17 is dog

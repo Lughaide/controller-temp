@@ -25,7 +25,6 @@ def postprocess_ssd(img, responses, model_outputs):
         cropped_result[output_name] = []
     
     for response in responses:
-        total_response = response.get_response()
         for output_name in model_outputs:
             for result in response.as_numpy(output_name):
                 cropped_result[output_name].append(result)

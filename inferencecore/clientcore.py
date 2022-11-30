@@ -2,6 +2,7 @@ import tritonclient.http as httpclient
 import tritonclient.grpc as grpcclient
 import tritonclient.grpc.model_config_pb2 as mconfpb
 import tritonclient.utils as serverutils
+from tritonclient.utils import InferenceServerException
 
 from .utils import *
 from .clientutils import echo_model_info
@@ -51,13 +52,13 @@ def create_client(url: str, port: str, use_http: bool, use_ssl: bool):
     
 
 def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], mname: str, mver: str, use_http: bool) -> Tuple[AttrDict, AttrDict]:
-    model_metadata = client.get_model_metadata(mname, mver)
-    model_config = client.get_model_config(mname, mver)
-    
+    # HTTP and GRPC return different response objects => must make grpc return as JSON to turn into AttrDict
     if use_http:
-        model_metadata = AttrDict(model_metadata)
-        model_config = AttrDict(model_config)
+        model_metadata = AttrDict(client.get_model_metadata(mname, mver))
+        model_config = AttrDict(client.get_model_config(mname, mver))
     else:
+        model_metadata = client.get_model_metadata(mname, mver, as_json=False) #type: ignore
+        model_config = client.get_model_config(mname, mver, as_json=False) #type: ignore
         model_config = model_config.config
 
     return model_metadata, model_config
