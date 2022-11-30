@@ -17,3 +17,6 @@ inferencecore/__pycache__/clientcore.cpython-38.pyc
 inferencecore/__pycache__/clientutils.cpython-38.pyc
 inferencecore/__pycache__/imgutils.cpython-38.pyc
 inferencecore/__pycache__/utils.cpython-38.pyc
+
+__pycache__
+server.log

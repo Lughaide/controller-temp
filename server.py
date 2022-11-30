@@ -173,12 +173,15 @@ def infer_detect_classify(filelist: List[UploadFile]):
                 req_batch.append(img)
             except:
                 continue
+        if batch_size > 0:
+            req_batch = [req_batch]
         for img in req_batch:
             for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http, class_count=3): # type: ignore
                 results = infer_request(client, model_in, model_out, ModelName.classification, use_http) # type: ignore
                 for result in results:
-                    postprocess_dense(result, name_outputs[0])
+                    postprocess_dense(result, name_outputs[0]) # Modify this to return actual JSON for users
     
+
     #return classified_img
     # return {"filename": file.filename,
     #         "type": file.content_type,
@@ -187,4 +190,11 @@ def infer_detect_classify(filelist: List[UploadFile]):
 
 @app.post("/infer/{model_name}")
 def infer_model(model_name: ModelName, mversion: int = 1):
+    # TODO: create overall structure for loading image files
+    # - Load images to numpy
+    # - Preprocess 1/multiple
+    # - Prep the client
+    # - Check batching
+    # - Inference
+    # - Return results
     return
