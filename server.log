@@ -1,26 +1,53 @@
-2022-11-30 17:21:50,586 - multipart.multipart - DEBUG - Calling on_part_begin with no data
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_field with data[42:61]
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_value with data[63:119]
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_end with no data
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_field with data[121:133]
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_value with data[135:145]
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_end with no data
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_headers_finished with no data
-2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_part_data with data[149:16384]
-2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_data with data[0:30531]
-2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_data with data[0:1]
-2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_data with data[30532:37191]
-2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_end with no data
-2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_end with no data
-2022-11-30 17:21:54,435 - root - DEBUG - Image #0.#0: [0.10453036 0.01175624 0.8501711  0.9593069 ], 17, 0.8235641121864319
-2022-11-30 17:21:54,458 - root - DEBUG - Image #0.#23: [0.16062847 0.02398653 0.65323377 0.49218696], 17, 0.07606463879346848
-2022-11-30 17:21:54,482 - root - DEBUG - Image #0.#65: [ 0.38136917 -0.02235109  0.85835725  0.5512738 ], 17, 0.05821438506245613
-2022-11-30 17:21:54,504 - root - DEBUG - Image #0.#91: [0.2225383  0.05271132 0.49257022 0.3359663 ], 17, 0.05355743318796158
-2022-11-30 17:21:54,527 - root - DEBUG - Image #0.#109: [0.11746214 0.3757926  0.6071136  0.9332814 ], 17, 0.05049887299537659
-2022-11-30 17:21:54,551 - root - DEBUG - Classifying the dog
-2022-11-30 17:21:54,604 - root - DEBUG - (5,)
-2022-11-30 17:21:54,604 - root - DEBUG - (1137, 895, 3)
-2022-11-30 17:21:54,617 - root - DEBUG - (562, 591, 3)
-2022-11-30 17:21:54,625 - root - DEBUG - (0, 573, 3)
-2022-11-30 17:21:54,625 - root - DEBUG - (340, 324, 3)
-2022-11-30 17:21:54,627 - root - DEBUG - (669, 588, 3)
+2022-11-30 17:29:21,508 - multipart.multipart - DEBUG - Calling on_part_begin with no data
+2022-11-30 17:29:21,508 - multipart.multipart - DEBUG - Calling on_header_field with data[42:61]
+2022-11-30 17:29:21,508 - multipart.multipart - DEBUG - Calling on_header_value with data[63:119]
+2022-11-30 17:29:21,509 - multipart.multipart - DEBUG - Calling on_header_end with no data
+2022-11-30 17:29:21,509 - multipart.multipart - DEBUG - Calling on_header_field with data[121:133]
+2022-11-30 17:29:21,509 - multipart.multipart - DEBUG - Calling on_header_value with data[135:145]
+2022-11-30 17:29:21,509 - multipart.multipart - DEBUG - Calling on_header_end with no data
+2022-11-30 17:29:21,509 - multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2022-11-30 17:29:21,509 - multipart.multipart - DEBUG - Calling on_part_data with data[149:53575]
+2022-11-30 17:29:21,509 - multipart.multipart - DEBUG - Calling on_part_end with no data
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_part_begin with no data
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_header_field with data[53619:53638]
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_header_value with data[53640:53696]
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_header_end with no data
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_header_field with data[53698:53710]
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_header_value with data[53712:53722]
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_header_end with no data
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_part_data with data[53726:53827]
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_part_data with data[0:1]
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_part_data with data[0:1]
+2022-11-30 17:29:21,510 - multipart.multipart - DEBUG - Calling on_part_data with data[53829:61129]
+2022-11-30 17:29:21,511 - multipart.multipart - DEBUG - Calling on_part_data with data[0:1]
+2022-11-30 17:29:21,511 - multipart.multipart - DEBUG - Calling on_part_data with data[61130:70532]
+2022-11-30 17:29:21,511 - multipart.multipart - DEBUG - Calling on_part_end with no data
+2022-11-30 17:29:21,511 - multipart.multipart - DEBUG - Calling on_end with no data
+2022-11-30 17:29:24,348 - root - DEBUG - Image #0.#0: [0.10453036 0.01175624 0.8501711  0.9593069 ], 17, 0.8235641121864319
+2022-11-30 17:29:24,371 - root - DEBUG - Image #0.#23: [0.16062847 0.02398653 0.65323377 0.49218696], 17, 0.07606463879346848
+2022-11-30 17:29:24,395 - root - DEBUG - Image #0.#65: [ 0.38136917 -0.02235109  0.85835725  0.5512738 ], 17, 0.05821438506245613
+2022-11-30 17:29:24,419 - root - DEBUG - Image #0.#91: [0.2225383  0.05271132 0.49257022 0.3359663 ], 17, 0.05355743318796158
+2022-11-30 17:29:24,444 - root - DEBUG - Image #0.#109: [0.11746214 0.3757926  0.6071136  0.9332814 ], 17, 0.05049887299537659
+2022-11-30 17:29:27,351 - root - DEBUG - Image #1.#0: [0.14513057 0.10922718 0.9517426  0.92405343], 17, 0.8888561129570007
+2022-11-30 17:29:27,375 - root - DEBUG - Image #1.#5: [0.16707662 0.11010197 0.69360685 0.61983275], 17, 0.16483919322490692
+2022-11-30 17:29:27,412 - root - DEBUG - Image #1.#37: [0.20326057 0.08292454 0.5222275  0.5238927 ], 17, 0.11756490916013718
+2022-11-30 17:29:27,462 - root - DEBUG - Image #1.#98: [0.25992694 0.13901597 0.49637362 0.41604483], 17, 0.09417925775051117
+2022-11-30 17:29:27,517 - root - DEBUG - Image #1.#118: [0.2965472  0.14782733 0.8342712  0.4791571 ], 17, 0.08967067301273346
+2022-11-30 17:29:27,586 - root - DEBUG - Image #1.#140: [0.4751826  0.16600907 0.752641   0.41230065], 17, 0.08523307740688324
+2022-11-30 17:29:27,645 - root - DEBUG - Image #1.#161: [0.01285067 0.6106881  0.79737175 0.950346  ], 17, 0.08191297203302383
+2022-11-30 17:29:27,742 - root - DEBUG - Classifying the dog
+2022-11-30 17:29:27,753 - root - DEBUG - 5
+2022-11-30 17:29:27,753 - root - DEBUG - (1137, 895, 3)
+2022-11-30 17:29:27,779 - root - DEBUG - (562, 591, 3)
+2022-11-30 17:29:27,784 - root - DEBUG - (0, 573, 3)
+2022-11-30 17:29:27,784 - root - DEBUG - (340, 324, 3)
+2022-11-30 17:29:27,787 - root - DEBUG - (669, 588, 3)
+2022-11-30 17:29:28,186 - root - DEBUG - 7
+2022-11-30 17:29:28,186 - root - DEBUG - (977, 968, 3)
+2022-11-30 17:29:28,198 - root - DEBUG - (611, 632, 3)
+2022-11-30 17:29:28,204 - root - DEBUG - (529, 383, 3)
+2022-11-30 17:29:28,207 - root - DEBUG - (333, 284, 3)
+2022-11-30 17:29:28,210 - root - DEBUG - (397, 646, 3)
+2022-11-30 17:29:28,215 - root - DEBUG - (295, 333, 3)
+2022-11-30 17:29:28,218 - root - DEBUG - (408, 941, 3)

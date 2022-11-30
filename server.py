@@ -105,12 +105,12 @@ def infer_test(model_name: ModelName):
             "content": {"image/jpg": {}}
         }},
     response_class=Response,)
-def infer_detect_classify(filelist: UploadFile):
+def infer_detect_classify(filelist: List[UploadFile]):
     img_batch = np.zeros((1, 3, 1200, 1200))
-    filelist = [filelist.file.read()] #type: ignore
+    #filelist = [filelist.file.read()] #type: ignore
     # Read from image file
     for file in filelist: #type: ignore
-        raw_data = np.frombuffer(file, np.uint8)
+        raw_data = np.frombuffer(file.file.read(), np.uint8)
         img_np = cv2.imdecode(raw_data, cv2.IMREAD_COLOR)
         # Proceed with preprocessing
         img_batch = np.append(img_batch, preprocess_ssd(img_np), axis=0)
@@ -146,8 +146,10 @@ def infer_detect_classify(filelist: UploadFile):
                 #cv_status, encoded_img = cv2.imencode('.jpg', cropped_img.copy())
                 #print(cv_status)
                 #return Response(encoded_img.tostring(), media_type="image/jpg")
-        cropped_batch[f'Image #{count1}'] = np.asarray(cropped_img)
+        cropped_batch[f'Image #{count1}'] = cropped_img
     
+    # End result: a dict with structure {"{Image number}": [list of multiple cropped images (np.ndarray)],...}
+
     logging.debug("Classifying the dog")
     # Classify the dog
     model_metadata, model_config = get_metadata_config(client, ModelName.classification, "1", use_http)
@@ -159,7 +161,7 @@ def infer_detect_classify(filelist: UploadFile):
     
     for key, value in cropped_batch.items():
         print(key)
-        logging.debug(f"{value.shape}")
+        logging.debug(f"{len(value)}")
         req_batch = []
         for img in value:
             logging.debug(f"{img.shape}")
@@ -174,7 +176,8 @@ def infer_detect_classify(filelist: UploadFile):
         for img in req_batch:
             for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http, class_count=3): # type: ignore
                 results = infer_request(client, model_in, model_out, ModelName.classification, use_http) # type: ignore
-                postprocess_dense(results[0], name_outputs[0])
+                for result in results:
+                    postprocess_dense(result, name_outputs[0])
     
     #return classified_img
     # return {"filename": file.filename,
