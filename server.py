@@ -14,6 +14,7 @@ class ModelName(str, Enum):
 class ModelConfig(str, Enum):
     load = "load"
     unload = "unload"
+    ready = "ready"
     # TODO: add more control methods
 
 @app.get("/models/{model_name}/")
@@ -21,14 +22,18 @@ def read_item(model_name: ModelName, mversion: int = 1):
     try:
         return get_metadata_config(client, model_name, str(mversion), True)
     except Exception as e:
-        return {"Error": "Invalid values"}
+        return {"Error": e}
     
+
 @app.post("/models/{mconfig}")
-def config_model(mconfig: ModelConfig, model_name: ModelName):
+def config_model(mconfig: ModelConfig, model_name: ModelName, model_version: int = 1):
     if mconfig is ModelConfig.load:
         client.load_model(model_name)
     if mconfig is ModelConfig.unload:
         client.unload_model(model_name)
+    if mconfig is ModelConfig.ready:
+        client.is_model_ready(model_name, str(model_version))
+
 
 @app.get("/infer/test/")
 def infer_test(model_name: ModelName):
