@@ -1,5 +1,7 @@
 from .utils import *
 
+# Pre + post processing for SSD_12 model
+
 def preprocess_ssd(img: np.ndarray):
     img = cv2.resize(img, (1200, 1200), interpolation= cv2.INTER_LINEAR_EXACT)
     img = np.divide(img, 255.0)
@@ -17,8 +19,8 @@ def reverse_ssd(img: np.ndarray):
     img = img * 255.0
     return img
 
-def create_batch(img_dir: str):
-    img_batch = np.zeros((1, 3, 1200, 1200), dtype=np.float32)
+def create_batch(img_dir: str, img_dim: tuple):
+    img_batch = np.zeros(img_dim, dtype=np.float32)
 
     for img_name in glob.glob(f"{img_dir}/*.jpg"):
         img = cv2.imread(img_name, cv2.IMREAD_UNCHANGED)
@@ -38,7 +40,6 @@ def postprocess_ssd(img, responses, model_outputs):
     return cropped_result
 
 def postprocess_dense(responses, output_name: str):
-    print(responses.get_response())
     # for response in responses:
     #     total_response = response.get_response()
     #     print(f"Response {total_response}")

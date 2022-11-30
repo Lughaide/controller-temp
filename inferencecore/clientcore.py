@@ -8,6 +8,7 @@ from .utils import *
 from .clientutils import echo_model_info
 
 def create_client(url: str, port: str, use_http: bool, use_ssl: bool):
+    # TODO: Adjust SSL options
     url = f"{url}:{port}"
     
     verbose = False
@@ -57,10 +58,10 @@ def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclien
         model_metadata = AttrDict(client.get_model_metadata(mname, mver))
         model_config = AttrDict(client.get_model_config(mname, mver))
     else:
-        if as_json:
+        if as_json: # View-able form
             model_metadata = AttrDict(client.get_model_metadata(mname, mver, as_json=as_json)) #type: ignore
             model_config = AttrDict(client.get_model_config(mname, mver, as_json=as_json)) #type: ignore
-        else:
+        else: # Code readable form
             model_metadata = client.get_model_metadata(mname, mver, as_json=as_json) #type: ignore
             model_config = client.get_model_config(mname, mver, as_json=as_json) #type: ignore
             model_config = model_config.config
@@ -84,18 +85,19 @@ def get_model_details(metadata: AttrDict, config: AttrDict):
     return [model_name, model_versions, model_max_batch_size, model_inputs, model_outputs]
 
 def request_generator(img_batch: np.ndarray, input_list: list, output_list: list, use_http: bool, class_count: int = 0):
+    # Generate request on demand. 
     if use_http:
         client = httpclient
     else:
         client = grpcclient
     
-    inputs = []
+    inputs = [] # This usually shouldn't have more than 1 input
     for count, input_val in enumerate(input_list):
         # each value in input_list contains: [input layer name, input shape, input datatype, input format]
         inputs.append(client.InferInput(input_val[0], img_batch.shape, datatype=input_val[2])) # type: ignore
         inputs[count].set_data_from_numpy(img_batch)
 
-    outputs = []
+    outputs = [] # Allows multiple outputs for models with multiple output layers
     for output_val in output_list:
         # each value in output_list contains: [output layer name, output shape, output datatype]
         outputs.append(client.InferRequestedOutput(output_val[0], class_count=class_count))
@@ -114,28 +116,29 @@ def infer_request(client: Union[httpclient.InferenceServerClient,grpcclient.Infe
 
 if __name__ == "__main__":
     # This file contains client definitions for interaction between Triton IS and FastAPI server (or any type of server that uses Python).
-    url = "192.168.53.100"
-    port = "32000"
-    model_name = "ssd_12"
-    model_version = "1"
+    print("Uncomment the code block below to run test.")
+    # url = "192.168.53.100"
+    # port = "32000"
+    # model_name = "ssd_12"
+    # model_version = "1"
 
-    print(f"Performing test run.")
-    print(f"Server address: {url}:{port}; Model: {model_name} version {model_version}")    
-    print("-"*100)
+    # print(f"Performing test run.")
+    # print(f"Server address: {url}:{port}; Model: {model_name} version {model_version}")    
+    # print("-"*100)
 
-    triton_client = create_client(url, port, True, False)
-    model_metadata, model_config = get_metadata_config(triton_client, model_name, model_version, True)
-    echo_model_info(model_metadata, model_config) # for checking model
-    *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
-    # print(batch_size, model_inputs, model_outputs, sep='\n')
+    # triton_client = create_client(url, port, True, False)
+    # model_metadata, model_config = get_metadata_config(triton_client, model_name, model_version, True)
+    # echo_model_info(model_metadata, model_config) # for checking model
+    # *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
+    # # print(batch_size, model_inputs, model_outputs, sep='\n')
 
-    img_batch = np.zeros((2, 3, 1200, 1200), dtype=np.float32)
-    for count, img in enumerate(img_batch):
-        print("> Request 1:")
-        t1 = perf_counter()
-        for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
-            results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-            for result in results:
-                print(result.get_response())
-        t2 = perf_counter()
-        print(f"Total time taken: {(t2 - t1):.03f}s")
+    # img_batch = np.zeros((2, 3, 1200, 1200), dtype=np.float32)
+    # for count, img in enumerate(img_batch):
+    #     print("> Request 1:")
+    #     t1 = perf_counter()
+    #     for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
+    #         results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
+    #         for result in results:
+    #             print(result.get_response())
+    #     t2 = perf_counter()
+    #     print(f"Total time taken: {(t2 - t1):.03f}s")

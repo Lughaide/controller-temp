@@ -1,41 +1,49 @@
 from inferencecore.clientcore import *
 from inferencecore.imgutils import *
 
-from enum import Enum
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import Response
 
-app = FastAPI()
+import logging
+from vars import *
+
+logging.basicConfig(filename='server.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+
 use_http = False
-client = create_client("192.168.53.100", "32000" if use_http else "32001", use_http, False)
+use_ssl = False
+server_ip = "192.168.53.100"
+http_port = "32000"
+grpc_port = "32001"
 
-class InferenceProtocol(str, Enum):
-    http = "http"
-    grpc = "grpc"
+client = create_client(server_ip, http_port if use_http else grpc_port, use_http, use_ssl)
 
-class ModelName(str, Enum):
-    detection = "ssd_12"
-    classification = "densenet_onnx"
+app = FastAPI()
 
-class ModelConfig(str, Enum):
-    load = "load"
-    unload = "unload"
-    ready = "ready"
-    # TODO: add more control methods
-
-@app.post("/server/{infer_method}")
+# Protocol selection
+@app.post("/server/protocol/{infer_method}")
 def set_protocol(infer_method: InferenceProtocol):
     global use_http, client
     if infer_method is InferenceProtocol.http:
         use_http = True
-        client = create_client("192.168.53.100", "32000" if use_http else "32001", use_http, False)
+        client = create_client(server_ip, http_port if use_http else grpc_port, use_http, use_ssl)
     else:
         if infer_method is InferenceProtocol.grpc:
             use_http = False
-            client = create_client("192.168.53.100", "32000" if use_http else "32001", use_http, False)
+            client = create_client(server_ip, http_port if use_http else grpc_port, use_http, use_ssl)
 
+# Get server liveliness and readiness
+# ... are these needed?
+@app.get("/server/live")
+def get_liveliness():
+    return client.is_server_live()
+
+@app.get("/server/ready")
+def get_server_ready():
+    return client.is_server_ready()
+
+# Get metadata and config
 @app.get("/models/{model_name}/")
-def read_item(model_name: ModelName, mversion: int = 1):
+def get_meta_conf(model_name: ModelName, mversion: int = 1):
     try:
         # If using grpc -> must get response in JSON form, therefore the final flag is set as True
         # Otherwise the HTTP response is already in dict form
@@ -43,18 +51,19 @@ def read_item(model_name: ModelName, mversion: int = 1):
         return metadata, config
     except InferenceServerException as e:
         return {"Error": e}
-    
 
+# Model control, health check, etc.
 @app.post("/models/{mconfig}")
 def config_model(mconfig: ModelConfig, model_name: ModelName, model_version: int = 1):
+    # TODO: Add more configuration methods
     if mconfig is ModelConfig.load:
         client.load_model(model_name)
     if mconfig is ModelConfig.unload:
         client.unload_model(model_name)
     if mconfig is ModelConfig.ready:
         client.is_model_ready(model_name, str(model_version))
-    # TODO: Add more configuration methods
 
+# Testing inference with dummy data
 @app.get("/infer/test/")
 def infer_test(model_name: ModelName):
     # Dummy data batch
@@ -63,21 +72,31 @@ def infer_test(model_name: ModelName):
     model_metadata, model_config = get_metadata_config(client, model_name, "1", use_http)
     *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
 
+    # Spawn dummy data based on model input shape and batch size (if supported)
     dummy_shape = list(model_inputs[0][1])
-    dummy_shape.insert(0, 1)
+    if batch_size > 0:
+        dummy_shape[0] = batch_size
+    else:
+        dummy_shape.insert(0, 1)
+    
     img_batch = np.zeros(tuple(dummy_shape), dtype=np.float32)
-    print(img_batch.shape)
-    # Should return a typical response for a detection inference
+    logging.debug(f'Dummy batch shape: {img_batch.shape}')
+
+    # Should return a typical response for a detection inference in JSON form
+    if batch_size > 0:
+        img_batch = [img_batch]
     for img in img_batch:
         for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http): # type: ignore
             results = infer_request(client, model_in, model_out, model_metadata.name, use_http) # type: ignore
-            #temp.append(postprocess_ssd(img, results, model_outputs)) # type: ignore
             for result in results:
+                logging.debug(model_outputs[0][0])
+                logging.debug(result.as_numpy(model_outputs[0][0]))
                 if use_http:
                     return result.get_response()
                 else:
                     return result.get_response(as_json=True)
 
+# A detection to inference frame (should make this into a function)
 @app.post("/infer/detect_all",
     responses = {
         200: {
@@ -85,6 +104,7 @@ def infer_test(model_name: ModelName):
         }},
     response_class=Response,)
 def infer_detect_classify(file: UploadFile):
+    # 
     raw_data = np.frombuffer(file.file.read(), np.uint8)
     img_np = cv2.imdecode(raw_data, cv2.IMREAD_COLOR)
     img_batch = preprocess_ssd(img_np)
