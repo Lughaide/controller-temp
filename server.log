@@ -1,0 +1,26 @@
+2022-11-30 17:21:50,586 - multipart.multipart - DEBUG - Calling on_part_begin with no data
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_field with data[42:61]
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_value with data[63:119]
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_end with no data
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_field with data[121:133]
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_value with data[135:145]
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_header_end with no data
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2022-11-30 17:21:50,587 - multipart.multipart - DEBUG - Calling on_part_data with data[149:16384]
+2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_data with data[0:30531]
+2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_data with data[0:1]
+2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_data with data[30532:37191]
+2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_part_end with no data
+2022-11-30 17:21:50,588 - multipart.multipart - DEBUG - Calling on_end with no data
+2022-11-30 17:21:54,435 - root - DEBUG - Image #0.#0: [0.10453036 0.01175624 0.8501711  0.9593069 ], 17, 0.8235641121864319
+2022-11-30 17:21:54,458 - root - DEBUG - Image #0.#23: [0.16062847 0.02398653 0.65323377 0.49218696], 17, 0.07606463879346848
+2022-11-30 17:21:54,482 - root - DEBUG - Image #0.#65: [ 0.38136917 -0.02235109  0.85835725  0.5512738 ], 17, 0.05821438506245613
+2022-11-30 17:21:54,504 - root - DEBUG - Image #0.#91: [0.2225383  0.05271132 0.49257022 0.3359663 ], 17, 0.05355743318796158
+2022-11-30 17:21:54,527 - root - DEBUG - Image #0.#109: [0.11746214 0.3757926  0.6071136  0.9332814 ], 17, 0.05049887299537659
+2022-11-30 17:21:54,551 - root - DEBUG - Classifying the dog
+2022-11-30 17:21:54,604 - root - DEBUG - (5,)
+2022-11-30 17:21:54,604 - root - DEBUG - (1137, 895, 3)
+2022-11-30 17:21:54,617 - root - DEBUG - (562, 591, 3)
+2022-11-30 17:21:54,625 - root - DEBUG - (0, 573, 3)
+2022-11-30 17:21:54,625 - root - DEBUG - (340, 324, 3)
+2022-11-30 17:21:54,627 - root - DEBUG - (669, 588, 3)

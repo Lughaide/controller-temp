@@ -1,11 +1,13 @@
 from inferencecore.clientcore import *
 from inferencecore.imgutils import *
+from vars import *
 
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import Response
 
+from typing import List
+
 import logging
-from vars import *
 
 logging.basicConfig(filename='server.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
@@ -103,60 +105,76 @@ def infer_test(model_name: ModelName):
             "content": {"image/jpg": {}}
         }},
     response_class=Response,)
-def infer_detect_classify(file: UploadFile):
-    # 
-    raw_data = np.frombuffer(file.file.read(), np.uint8)
-    img_np = cv2.imdecode(raw_data, cv2.IMREAD_COLOR)
-    img_batch = preprocess_ssd(img_np)
-
+def infer_detect_classify(filelist: UploadFile):
+    img_batch = np.zeros((1, 3, 1200, 1200))
+    filelist = [filelist.file.read()] #type: ignore
+    # Read from image file
+    for file in filelist: #type: ignore
+        raw_data = np.frombuffer(file, np.uint8)
+        img_np = cv2.imdecode(raw_data, cv2.IMREAD_COLOR)
+        # Proceed with preprocessing
+        img_batch = np.append(img_batch, preprocess_ssd(img_np), axis=0)
+    
+    img_batch = img_batch[1:].astype(np.float32)
     # Detect the dog
     model_metadata, model_config = get_metadata_config(client, ModelName.detection, "1", use_http)
     *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
+
+    if batch_size > 0:
+        img_batch = [img_batch]
 
     name_outputs = []
     for n in model_metadata.outputs:
         name_outputs.append(n.name) # type: ignore
 
     detected_img = {}
-    for img in img_batch:
+    cropped_batch = {}
+    for count1, img in enumerate(img_batch):
         for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http): # type: ignore
             results = infer_request(client, model_in, model_out, ModelName.detection, use_http) # type: ignore
             detected_img = postprocess_ssd(img, results, name_outputs)
 
-    cropped_img = []
-    for count, res_item in enumerate(detected_img['labels']):
-        if (res_item == 17): # Class 17 is dog
-            print(detected_img['bboxes'][count], detected_img['labels'][count], detected_img['scores'][count])
-            xmin, ymin, xmax, ymax = (detected_img['bboxes'][count]*1200).astype(np.uint32)
-            print(xmin, ymin, xmax, ymax)
-            rt_img = reverse_ssd(img_batch[0])
-            print(rt_img.shape)
-            cropped_img.append(rt_img[ymin:ymax, xmin:xmax])
-            
-            #cv_status, encoded_img = cv2.imencode('.jpg', cropped_img.copy())
-            #print(cv_status)
-            #return Response(encoded_img.tostring(), media_type="image/jpg")
-            break
-    cropped_img[0] = cv2.resize(cropped_img[0], (224, 224), interpolation= cv2.INTER_LINEAR_EXACT)
-    cv2.imwrite("temp.jpg", cropped_img[0])
-    cropped_img[0] = cropped_img[0].transpose(2, 0, 1)
-    cropped_img[0] = cropped_img[0] / 127.5 - 1 #type: ignore
-    cropped_img[0] = cropped_img[0].astype(np.float32)
+        cropped_img = []
+        for count, res_item in enumerate(detected_img['labels']):
+            if (res_item == 17): # Class 17 is dog
+                logging.debug(f"Image #{count1}.#{count}: {detected_img['bboxes'][count]}, {detected_img['labels'][count]}, {detected_img['scores'][count]}")
+                xmin, ymin, xmax, ymax = (detected_img['bboxes'][count]*1200).astype(np.uint32)
+                # print(xmin, ymin, xmax, ymax)
+                rt_img = reverse_ssd(img)
+                # print(rt_img.shape)
+                cropped_img.append(rt_img[ymin:ymax, xmin:xmax])            
+                #cv_status, encoded_img = cv2.imencode('.jpg', cropped_img.copy())
+                #print(cv_status)
+                #return Response(encoded_img.tostring(), media_type="image/jpg")
+        cropped_batch[f'Image #{count1}'] = np.asarray(cropped_img)
     
-    print("Classifying the dog")
+    logging.debug("Classifying the dog")
     # Classify the dog
     model_metadata, model_config = get_metadata_config(client, ModelName.classification, "1", use_http)
     *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
-
+    
     name_outputs = []
     for n in model_metadata.outputs:
         name_outputs.append(n.name) # type: ignore
-
-    classified_img = {}
-    for img in cropped_img:
-        for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http, class_count=3): # type: ignore
-            results = infer_request(client, model_in, model_out, ModelName.classification, use_http) # type: ignore
-            postprocess_dense(results[0], name_outputs[0])
+    
+    for key, value in cropped_batch.items():
+        print(key)
+        logging.debug(f"{value.shape}")
+        req_batch = []
+        for img in value:
+            logging.debug(f"{img.shape}")
+            try:
+                img = cv2.resize(img, (224, 224), interpolation= cv2.INTER_LINEAR_EXACT)
+                img = img.transpose(2, 0, 1)
+                img = img / 127.5 - 1 #type: ignore
+                img = img.astype(np.float32)
+                req_batch.append(img)
+            except:
+                continue
+        for img in req_batch:
+            for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http, class_count=3): # type: ignore
+                results = infer_request(client, model_in, model_out, ModelName.classification, use_http) # type: ignore
+                postprocess_dense(results[0], name_outputs[0])
     
     #return classified_img
     # return {"filename": file.filename,
