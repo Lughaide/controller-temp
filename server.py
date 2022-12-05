@@ -2,16 +2,8 @@ from inferencecore.clientcore import *
 from inferencecore.imgutils import *
 from vars import *
 
-import os
-import shutil
-from datetime import datetime
-
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import Response, FileResponse
-
-from typing import List
-
-import logging
 
 use_http = True
 use_ssl = False
@@ -103,7 +95,7 @@ def infer_test(model_name: ModelName):
                 else:
                     return result.get_response(as_json=True)
 
-# A detection to inference frame (should make this into a function)
+# A detection to inference frame for classifying COCO classes
 @app.post("/infer/detect_all",
     responses = {
         200: {
@@ -144,7 +136,8 @@ def infer_detect_classify(filelist: List[UploadFile]):
                 logging.debug(f"Image #{count1}.#{count}: {detected_img['bboxes'][count]}, {detected_img['labels'][count]}, {detected_img['scores'][count]}")
                 xmin, ymin, xmax, ymax = (detected_img['bboxes'][count]*1200).astype(np.uint32)
                 rt_img = reverse_ssd(img)
-                cropped_img.append(rt_img[ymin:ymax, xmin:xmax])            
+                cropped_img.append(rt_img[ymin:ymax, xmin:xmax])
+
         cropped_batch[f'Image#{count1}'] = cropped_img
     # End result: a dict with structure {"{Image number}": [list of multiple cropped images (np.ndarray)],...}
 
@@ -184,6 +177,7 @@ def infer_detect_classify(filelist: List[UploadFile]):
         if batch_size > 0:
             req_batch = [req_batch]
         
+        # Create a folder for each image
         try:
             os.umask(0)
             os.makedirs(f"{response_path}/{key}", mode=0o777)
@@ -192,18 +186,23 @@ def infer_detect_classify(filelist: List[UploadFile]):
             pass
 
         for count, img in enumerate(req_batch):
+            # Create a folder for each cropped image from the original image
             try:
                 os.umask(0)
                 os.makedirs(f"{response_path}/{key}/{count}", mode=0o777)
             except Exception as e:
                 logging.debug(e)
                 pass
+
             cv2.imwrite(f"{response_path}/{key}/{count}/cropped_img.png", reverse_dense(img))
+
             for model_in, model_out in request_generator(img, model_inputs, model_outputs, use_http, class_count=3): # type: ignore
                 results = infer_request(client, model_in, model_out, ModelName.classification, use_http) # type: ignore
                 for result in results:
                     with open(f"{response_path}/{key}/{count}/results.txt", "ab+") as f:
                         np.savetxt(f, postprocess_dense(result, name_outputs[0]), fmt="%s")
                         f.write(b"\n")
+
     shutil.make_archive(f"{response_path}", 'zip', f"{response_path}")
+    
     return FileResponse(f"{response_path}.zip", media_type='application/octet-stream',filename=f"{response_foldername}.zip")
