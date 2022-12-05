@@ -41,7 +41,7 @@ def get_liveliness():
     return client.is_server_live()
 
 @app.get("/server/ready")
-def get_server_ready():
+def get_readiness():
     return client.is_server_ready()
 
 # Get metadata and config
