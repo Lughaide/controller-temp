@@ -62,7 +62,7 @@ def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclien
         if as_json: # View-able form
             model_metadata = AttrDict(client.get_model_metadata(mname, mver, as_json=as_json)) #type: ignore
             model_config = AttrDict(client.get_model_config(mname, mver, as_json=as_json)) #type: ignore
-        else: # Code readable form
+        else: # Code readable formy
             model_metadata = client.get_model_metadata(mname, mver, as_json=as_json) #type: ignore
             model_config = client.get_model_config(mname, mver, as_json=as_json) #type: ignore
             model_config = model_config.config

@@ -7,7 +7,7 @@ def preprocess_ssd(img: np.ndarray):
     img = np.divide(img, 255.0)
     img = np.subtract(img, [0.485, 0.456, 0.406])
     img = np.divide(img, [0.229, 0.224, 0.225])
-    img = img.transpose(2, 0, 1)
+    img = img.transpose(2, 0, 1) # CHW
     img = np.expand_dims(img, axis=0)
     img = img.astype(np.float32)
     return img
@@ -18,27 +18,6 @@ def reverse_ssd(img: np.ndarray):
     img = img + [0.485, 0.456, 0.406]
     img = img * 255.0
     return img
-
-def preprocess_dense(img: np.ndarray):
-    img = cv2.resize(img, (224, 224), interpolation= cv2.INTER_LINEAR_EXACT)
-    img = img.transpose(2, 0, 1)
-    img = img / 127.5 - 1 #type: ignore
-    img = img.astype(np.float32)
-    return img
-
-def reverse_dense(img: np.ndarray):
-    img = (img + 1) * 127.5
-    img = img.transpose(1, 2, 0)
-    img = img.astype(np.uint8)
-    return img
-
-def create_batch(img_dir: str, img_dim: tuple):
-    img_batch = np.zeros(img_dim, dtype=np.float32)
-
-    for img_name in glob.glob(f"{img_dir}/*.jpg"):
-        img = cv2.imread(img_name, cv2.IMREAD_UNCHANGED)
-        img_batch = np.append(img_batch, preprocess_ssd(img), axis=0)
-    return img_batch[1:]
 
 def postprocess_ssd(responses, model_outputs):
     cropped_result = {}
@@ -52,6 +31,21 @@ def postprocess_ssd(responses, model_outputs):
                 cropped_result[output_name].append(result)
     return cropped_result
 
+# Pre + post processing for DenseNet model
+
+def preprocess_dense(img: np.ndarray):
+    img = cv2.resize(img, (224, 224), interpolation= cv2.INTER_LINEAR_EXACT)
+    img = img.transpose(2, 0, 1) 
+    img = img / 127.5 - 1 #type: ignore
+    img = img.astype(np.float32)
+    return img
+
+def reverse_dense(img: np.ndarray):
+    img = (img + 1) * 127.5
+    img = img.transpose(1, 2, 0)
+    img = img.astype(np.uint8)
+    return img
+
 def postprocess_dense(responses, output_name: str):
     output_array = responses.as_numpy(output_name)
     #print(output_array)
@@ -61,6 +55,14 @@ def postprocess_dense(responses, output_name: str):
     #         #print("    {} ({}) = {}".format(cls[0], cls[1], cls[2]))
     #         print(cls)
     return output_array
+
+def create_batch(img_dir: str, img_dim: tuple):
+    img_batch = np.zeros(img_dim, dtype=np.float32)
+
+    for img_name in glob.glob(f"{img_dir}/*.jpg"):
+        img = cv2.imread(img_name, cv2.IMREAD_UNCHANGED)
+        img_batch = np.append(img_batch, preprocess_ssd(img), axis=0)
+    return img_batch[1:]
 
 def draw_img_w_label(img: np.ndarray, bbox: np.ndarray):
     color = (0, 0, 255)
