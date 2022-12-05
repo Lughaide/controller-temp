@@ -19,6 +19,19 @@ def reverse_ssd(img: np.ndarray):
     img = img * 255.0
     return img
 
+def preprocess_dense(img: np.ndarray):
+    img = cv2.resize(img, (224, 224), interpolation= cv2.INTER_LINEAR_EXACT)
+    img = img.transpose(2, 0, 1)
+    img = img / 127.5 - 1 #type: ignore
+    img = img.astype(np.float32)
+    return img
+
+def reverse_dense(img: np.ndarray):
+    img = (img + 1) * 127.5
+    img = img.transpose(1, 2, 0)
+    img = img.astype(np.uint8)
+    return img
+
 def create_batch(img_dir: str, img_dim: tuple):
     img_batch = np.zeros(img_dim, dtype=np.float32)
 
@@ -27,7 +40,7 @@ def create_batch(img_dir: str, img_dim: tuple):
         img_batch = np.append(img_batch, preprocess_ssd(img), axis=0)
     return img_batch[1:]
 
-def postprocess_ssd(img, responses, model_outputs):
+def postprocess_ssd(responses, model_outputs):
     cropped_result = {}
     
     for output_name in model_outputs:
@@ -40,24 +53,14 @@ def postprocess_ssd(img, responses, model_outputs):
     return cropped_result
 
 def postprocess_dense(responses, output_name: str):
-    # for response in responses:
-    #     total_response = response.get_response()
-    #     print(f"Response {total_response}")
-    #     for result in response.as_numpy(output_name):
-    #         pred = str(result, encoding='utf-8').split(":")
-    #         print(pred)
     output_array = responses.as_numpy(output_name)
-    print(output_array)
-    for results in output_array:
-        results = [results]
-        for result in results:
-            if output_array.dtype.type == np.object_:
-                cls = "".join(chr(x) for x in result).split(':')
-            else:
-                print(result)
-                #cls = result.split(':')
-                #print("    {} ({}) = {}".format(cls[0], cls[1], cls[2]))
-    return
+    #print(output_array)
+    # for results in output_array:
+    #     for result in results:
+    #         cls = result.split(':')
+    #         #print("    {} ({}) = {}".format(cls[0], cls[1], cls[2]))
+    #         print(cls)
+    return output_array
 
 def draw_img_w_label(img: np.ndarray, bbox: np.ndarray):
     color = (0, 0, 255)

@@ -1,3 +1,5 @@
+__all__ = ['create_client', 'get_metadata_config', 'get_model_details', 'request_generator', 'infer_request', 'InferenceServerException']
+
 import tritonclient.http as httpclient
 import tritonclient.grpc as grpcclient
 import tritonclient.grpc.model_config_pb2 as mconfpb
@@ -51,7 +53,6 @@ def create_client(url: str, port: str, use_http: bool, use_ssl: bool):
         else:
             return grpcclient.InferenceServerClient(url=url, verbose=verbose)
     
-
 def get_metadata_config(client: Union[httpclient.InferenceServerClient,grpcclient.InferenceServerClient], mname: str, mver: str, use_http: bool, as_json: bool = False) -> Tuple[AttrDict, AttrDict]:
     # HTTP and GRPC return different response objects => must make grpc return as JSON to turn into AttrDict
     if use_http:
@@ -117,28 +118,28 @@ def infer_request(client: Union[httpclient.InferenceServerClient,grpcclient.Infe
 if __name__ == "__main__":
     # This file contains client definitions for interaction between Triton IS and FastAPI server (or any type of server that uses Python).
     print("Uncomment the code block below to run test.")
-    # url = "192.168.53.100"
-    # port = "32000"
-    # model_name = "ssd_12"
-    # model_version = "1"
+    url = "192.168.53.100"
+    port = "32000"
+    model_name = "ssd_12"
+    model_version = "1"
 
-    # print(f"Performing test run.")
-    # print(f"Server address: {url}:{port}; Model: {model_name} version {model_version}")    
-    # print("-"*100)
+    print(f"Performing test run.")
+    print(f"Server address: {url}:{port}; Model: {model_name} version {model_version}")    
+    print("-"*100)
 
-    # triton_client = create_client(url, port, True, False)
-    # model_metadata, model_config = get_metadata_config(triton_client, model_name, model_version, True)
-    # echo_model_info(model_metadata, model_config) # for checking model
-    # *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
-    # # print(batch_size, model_inputs, model_outputs, sep='\n')
+    triton_client = create_client(url, port, True, False)
+    model_metadata, model_config = get_metadata_config(triton_client, model_name, model_version, True)
+    echo_model_info(model_metadata, model_config) # for checking model
+    *_, batch_size, model_inputs, model_outputs = get_model_details(model_metadata, model_config)
+    print(batch_size, model_inputs, model_outputs, sep='\n')
 
-    # img_batch = np.zeros((2, 3, 1200, 1200), dtype=np.float32)
-    # for count, img in enumerate(img_batch):
-    #     print("> Request 1:")
-    #     t1 = perf_counter()
-    #     for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
-    #         results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
-    #         for result in results:
-    #             print(result.get_response())
-    #     t2 = perf_counter()
-    #     print(f"Total time taken: {(t2 - t1):.03f}s")
+    img_batch = np.zeros((2, 3, 1200, 1200), dtype=np.float32)
+    for count, img in enumerate(img_batch):
+        print("> Request 1:")
+        t1 = perf_counter()
+        for model_in, model_out in request_generator(img, model_inputs, model_outputs, True): # type: ignore
+            results = infer_request(triton_client, model_in, model_out, model_metadata.name, True) # type: ignore
+            for result in results:
+                print(result.get_response())
+        t2 = perf_counter()
+        print(f"Total time taken: {(t2 - t1):.03f}s")
