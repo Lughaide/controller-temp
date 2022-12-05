@@ -10,7 +10,7 @@
 
 # Built Visual Studio Code Extensions
 *.vsix
-inference-core/__pycache__/*
+inferencecore/__pycache__/*
 __pycache__/server.cpython-38.pyc
 inferencecore/__pycache__/__init__.cpython-38.pyc
 inferencecore/__pycache__/clientcore.cpython-38.pyc
