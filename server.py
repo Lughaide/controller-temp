@@ -13,6 +13,10 @@ grpc_port = "32001"
 
 client = create_client(server_ip, http_port if use_http else grpc_port, use_http, use_ssl)
 
+if not os.path.exists("./response"):
+    os.umask(0)
+    os.makedirs("./response", mode=0o777)
+
 app = FastAPI()
 
 # Protocol selection
@@ -204,5 +208,5 @@ def infer_detect_classify(filelist: List[UploadFile]):
                         f.write(b"\n")
 
     shutil.make_archive(f"{response_path}", 'zip', f"{response_path}")
-    
+
     return FileResponse(f"{response_path}.zip", media_type='application/octet-stream',filename=f"{response_foldername}.zip")
